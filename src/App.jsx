@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import Footer from './components/layout/Footer'
 import Navbar from './components/layout/Navbar'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { NavigationProvider, useLocation } from './navigation'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminLogin from './pages/admin/AdminLogin'
 import ApplicantDashboard from './pages/applicant/ApplicantDashboard'
@@ -22,7 +22,7 @@ import LoginPage from './pages/login/LoginPage'
 import PlatformPage from './pages/platform/PlatformPage'
 import SectorsPage from './pages/sectors/SectorsPage'
 
-function PortalScreen({ role, children }) {
+function PortalRoute({ role, children }) {
   const { signInAsRole, user } = useAuth()
 
   useEffect(() => {
@@ -62,56 +62,6 @@ function AppContent() {
     setDarkMode(!darkMode)
   }
 
-  const activeScreen = useMemo(() => {
-    switch (pathname) {
-      case '/':
-      case '/home':
-        return <Home />
-      case '/login':
-        return <LoginPage />
-      case '/browse':
-        return <Browse />
-      case '/platform':
-        return <PlatformPage />
-      case '/sectors':
-        return <SectorsPage />
-      case '/applicants':
-        return <ApplicantLanding />
-      case '/applicant/login':
-        return <ApplicantLogin />
-      case '/applicants/register':
-        return <ApplicantRegister />
-      case '/applicant/dashboard':
-        return (
-          <PortalScreen role="applicant">
-            <ApplicantDashboard />
-          </PortalScreen>
-        )
-      case '/employers':
-        return <EmployerLanding />
-      case '/employer/login':
-        return <EmployerLogin />
-      case '/employers/register':
-        return <EmployerRegister />
-      case '/employer/dashboard':
-        return (
-          <PortalScreen role="employer">
-            <EmployerDashboard />
-          </PortalScreen>
-        )
-      case '/admin/login':
-        return <AdminLogin />
-      case '/admin/dashboard':
-        return (
-          <PortalScreen role="admin">
-            <AdminDashboard />
-          </PortalScreen>
-        )
-      default:
-        return <Home />
-    }
-  }, [pathname])
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-600 selection:text-white transition-colors duration-300">
       <Toaster
@@ -123,8 +73,46 @@ function AppContent() {
       />
       <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
       <main>
-        <ErrorBoundary key={pathname}>
-          {activeScreen}
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/platform" element={<PlatformPage />} />
+            <Route path="/sectors" element={<SectorsPage />} />
+            <Route path="/applicant/login" element={<ApplicantLogin />} />
+            <Route path="/employers" element={<EmployerLanding />} />
+            <Route path="/employer/login" element={<EmployerLogin />} />
+            <Route path="/employers/register" element={<EmployerRegister />} />
+            <Route path="/applicants" element={<ApplicantLanding />} />
+            <Route path="/applicants/register" element={<ApplicantRegister />} />
+            <Route
+              path="/applicant/dashboard"
+              element={(
+                <PortalRoute role="applicant">
+                  <ApplicantDashboard />
+                </PortalRoute>
+              )}
+            />
+            <Route
+              path="/employer/dashboard"
+              element={(
+                <PortalRoute role="employer">
+                  <EmployerDashboard />
+                </PortalRoute>
+              )}
+            />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={(
+                <PortalRoute role="admin">
+                  <AdminDashboard />
+                </PortalRoute>
+              )}
+            />
+          </Routes>
         </ErrorBoundary>
       </main>
       <Footer />
@@ -134,10 +122,10 @@ function AppContent() {
 
 export default function Root() {
   return (
-    <NavigationProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <AppContent />
-      </AuthProvider>
-    </NavigationProvider>
+      </Router>
+    </AuthProvider>
   )
 }

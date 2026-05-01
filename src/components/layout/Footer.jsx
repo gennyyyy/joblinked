@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom';
 import { Layers } from 'lucide-react';
-import { Link } from '../../navigation';
 
 export default function Footer() {
   return (

@@ -1,5 +1,5 @@
 import { Building2, Layers, Shield, User } from 'lucide-react'
-import { Link } from '../../navigation'
+import { Link } from 'react-router-dom'
 
 function PortalCard({ description, icon, title, to }) {
   const PortalIcon = icon

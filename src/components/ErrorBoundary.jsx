@@ -1,6 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { Link } from '../navigation';
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { ArrowLeft, Layers } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Link, useNavigate } from '../../navigation'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')

@@ -1,6 +1,6 @@
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Activity, Globe, Cpu } from 'lucide-react';
 import municipalHallImg from '../../assets/municipal_hall.png';
-import { useNavigate } from '../../navigation';
 
 const Label = ({ children, icon: Icon, className = "" }) => (
   <div className={`flex items-center gap-2 industrial-label text-slate-500 dark:text-slate-400 ${className}`}>
