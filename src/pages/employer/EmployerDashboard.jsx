@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Briefcase, Loader2, Plus, ShieldCheck, Trash2, Users, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext'
@@ -36,13 +37,13 @@ const getStatusClasses = (status) => {
   return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
 }
 
+const MOCK_EMPLOYER_ID = 1
+
 export default function EmployerDashboard() {
-  const [activeTab, setActiveTab] = useState('jobs')
+  const { api } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const [showModal, setShowModal] = useState(false)
-  const [applicationFilter, setApplicationFilter] = useState('all')
-  const [showJobForm, setShowJobForm] = useState(false)
-  const [selectedJobApplications, setSelectedJobApplications] = useState(null)
-  const [selectedJobDetails, setSelectedJobDetails] = useState(null)
   const [jobApplications, setJobApplications] = useState([])
   const [loading, setLoading] = useState(true)
   const [jobs, setJobs] = useState([])
@@ -55,34 +56,78 @@ export default function EmployerDashboard() {
     description: '',
     requirements: '',
   })
-  const { api, user } = useAuth()
+
+  const activeTab = searchParams.get('tab') || 'jobs'
+  const showJobForm = searchParams.get('action') === 'create-job'
+  const applicationFilter = searchParams.get('filter') || 'all'
+  const selectedJobApplications = searchParams.get('applications')
+  const jobIdParam = searchParams.get('details')
+  const selectedJobDetails = jobIdParam ? jobs.find(j => j.id === parseInt(jobIdParam)) : null
+
+  const updateParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (!value) {
+      newParams.delete(key)
+    } else {
+      newParams.set(key, value)
+    }
+    setSearchParams(newParams)
+  }
+
+  const setTab = (tab) => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.set('tab', tab)
+    newParams.delete('applications')
+    setSearchParams(newParams)
+  }
+
+  const closeJobModal = () => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete('details')
+    setSearchParams(newParams)
+  }
+
+  const closeApplicationsModal = () => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete('applications')
+    setSearchParams(newParams)
+  }
 
   const loadJobs = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true)
-      const employerJobs = await api.getJobsByEmployer(user.id)
+      const employerJobs = await api.getJobsByEmployer(MOCK_EMPLOYER_ID)
       setJobs(employerJobs)
     } catch (error) {
       console.error('Error loading jobs:', error)
     } finally {
       if (!silent) setLoading(false)
     }
-  }, [api, user])
+  }, [])
 
   useEffect(() => {
-    if (user) {
-      loadJobs()
+    loadJobs()
+  }, [loadJobs])
+
+  useEffect(() => {
+    if (selectedJobApplications) {
+      const loadApplications = async () => {
+        const apps = await api.getApplicationsByJob(parseInt(selectedJobApplications))
+        setJobApplications(apps)
+        setShowModal(true)
+      }
+      loadApplications()
     }
-  }, [loadJobs, user])
+  }, [selectedJobApplications])
 
   const handleCreateJob = async (event) => {
     event.preventDefault()
 
     try {
       await api.createJob({
-        employerId: user.id,
+        employerId: MOCK_EMPLOYER_ID,
         title: newJob.title,
-        company: user.company_name,
+        company: 'Santa Maria Builders Corp.',
         location: newJob.location,
         type: newJob.type,
         category: newJob.category,
@@ -92,7 +137,7 @@ export default function EmployerDashboard() {
       })
 
       await loadJobs(true)
-      setShowJobForm(false)
+      updateParam('action', '')
       setNewJob({
         title: '',
         location: '',
@@ -115,9 +160,9 @@ export default function EmployerDashboard() {
     try {
       await api.deleteJob(jobId)
       await loadJobs(true)
-      if (selectedJobApplications === jobId) {
+      if (selectedJobApplications === jobId.toString()) {
         setJobApplications([])
-        setSelectedJobApplications(null)
+        closeApplicationsModal()
       }
       toast.success('Job post removed')
     } catch (error) {
@@ -127,19 +172,15 @@ export default function EmployerDashboard() {
   }
 
   const viewApplications = async (jobId) => {
-    setSelectedJobApplications(jobId)
-    setApplicationFilter('all')
-    const applications = await api.getApplicationsByJob(jobId)
-    setJobApplications(applications)
-    setShowModal(true)
+    updateParam('applications', jobId)
   }
 
   const viewAllApplications = async () => {
-    setSelectedJobApplications(null)
-    setApplicationFilter('all')
-    const applications = await api.getApplicationsByEmployer(user.id)
+    closeApplicationsModal()
+    updateParam('filter', 'all')
+    const applications = await api.getApplicationsByEmployer(MOCK_EMPLOYER_ID)
     setJobApplications(applications)
-    setActiveTab('applications')
+    updateParam('tab', 'applications')
   }
 
   const handleApplicationStatus = async (applicationId, status) => {
@@ -147,10 +188,10 @@ export default function EmployerDashboard() {
       await api.updateApplicationStatus(applicationId, status)
 
       if (selectedJobApplications) {
-        const applications = await api.getApplicationsByJob(selectedJobApplications)
+        const applications = await api.getApplicationsByJob(parseInt(selectedJobApplications))
         setJobApplications(applications)
       } else {
-        const applications = await api.getApplicationsByEmployer(user.id)
+        const applications = await api.getApplicationsByEmployer(MOCK_EMPLOYER_ID)
         setJobApplications(applications)
       }
 
@@ -201,22 +242,22 @@ export default function EmployerDashboard() {
           <div>
             <Label icon={ShieldCheck} className="mb-2">Employer Dashboard</Label>
             <h1 className="industrial-heading text-4xl text-slate-950 dark:text-white">
-              {user.company_name}
+              Santa Maria Builders Corp.
             </h1>
             <p className="text-slate-500 font-medium mt-2">
-              {user.industry} | {user.address}
+              Construction | Poblacion, Sta. Maria
             </p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusClasses(user.status)}`}>
-            {user.status}
+          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusClasses('approved')}`}>
+            approved
           </span>
         </div>
 
         <div className="flex gap-4 mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
           <button
             onClick={() => {
-              setActiveTab('jobs')
-              setSelectedJobApplications(null)
+              setTab('jobs')
+              closeApplicationsModal()
             }}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
               activeTab === 'jobs'
@@ -242,7 +283,7 @@ export default function EmployerDashboard() {
           <div className="space-y-6">
             {!showJobForm ? (
               <button
-                onClick={() => setShowJobForm(true)}
+                onClick={() => updateParam('action', 'create-job')}
                 className="w-full bento-card p-6 flex items-center justify-center gap-3 hover:border-blue-600/30 transition-all"
               >
                 <Plus size={24} className="text-blue-600" />
@@ -348,7 +389,7 @@ export default function EmployerDashboard() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowJobForm(false)}
+                      onClick={() => updateParam('action', '')}
                       className="border border-slate-300 dark:border-slate-700 px-6 py-2 rounded-lg font-bold text-sm"
                     >
                       Cancel
@@ -369,7 +410,7 @@ export default function EmployerDashboard() {
                   <div
                     key={job.id}
                     className="bento-card p-6 cursor-pointer group/details hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all"
-                    onClick={() => setSelectedJobDetails(job)}
+                    onClick={() => updateParam('details', job.id)}
                   >
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div className="flex-1 w-full md:w-auto">
@@ -395,7 +436,7 @@ export default function EmployerDashboard() {
                         </div>
                         <h4 className="text-lg font-bold text-slate-950 dark:text-white group-hover/details:text-blue-600 transition-colors">{job.title}</h4>
                         <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400 mt-1">
-                          <span className="flex items-center gap-1"><Users size={14} /> {job.application_count} applicants</span>
+                          <span className="flex items-center gap-1"><Users size={14} /> {job.application_count || 0} applicants</span>
                           <span>{job.location}</span>
                         </div>
                       </div>
@@ -433,7 +474,7 @@ export default function EmployerDashboard() {
               {['all', 'pending', 'accepted', 'rejected'].map(filterValue => (
                 <button
                   key={filterValue}
-                  onClick={() => setApplicationFilter(filterValue)}
+                  onClick={() => updateParam('filter', filterValue)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                     applicationFilter === filterValue
                       ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
@@ -510,7 +551,7 @@ export default function EmployerDashboard() {
                   {['all', 'pending', 'accepted', 'rejected'].map(filterValue => (
                     <button
                       key={filterValue}
-                      onClick={() => setApplicationFilter(filterValue)}
+                      onClick={() => updateParam('filter', filterValue)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                         applicationFilter === filterValue
                           ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
@@ -523,7 +564,7 @@ export default function EmployerDashboard() {
                 </div>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeApplicationsModal}
                 className="text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors self-start"
               >
                 <X size={24} />
@@ -592,7 +633,7 @@ export default function EmployerDashboard() {
                 <p className="text-slate-500 font-medium mt-1">{selectedJobDetails.title}</p>
               </div>
               <button
-                onClick={() => setSelectedJobDetails(null)}
+                onClick={closeJobModal}
                 className="text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors"
               >
                 <X size={24} />

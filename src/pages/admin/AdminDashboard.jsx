@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Briefcase,
   Building2,
@@ -23,36 +24,62 @@ const Label = ({ children, icon: Icon, className = '' }) => (
 )
 
 export default function AdminDashboard() {
+  const { api } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const [stats, setStats] = useState({
     userCount: 0,
     employerCount: 0,
     jobCount: 0,
     applicationCount: 0,
   })
-  const [activeTab, setActiveTab] = useState('overview')
   const [users, setUsers] = useState([])
   const [employers, setEmployers] = useState([])
   const [jobs, setJobs] = useState([])
   const [applications, setApplications] = useState([])
   const [loading, setLoading] = useState(true)
-  const [jobFilter, setJobFilter] = useState({
-    status: 'all',
-    type: 'all',
-    category: 'all',
-  })
-  const [appFilter, setAppFilter] = useState({
-    status: 'all',
-    applicant: '',
-    company: '',
-    category: 'all',
-    type: 'all',
-  })
-  const [employerFilter, setEmployerFilter] = useState({
-    status: 'all',
-    industry: 'all',
-    search: '',
-  })
-  const { api, user } = useAuth()
+
+  const activeTab = searchParams.get('tab') || 'overview'
+
+  const jobFilter = {
+    status: searchParams.get('jobStatus') || 'all',
+    type: searchParams.get('jobType') || 'all',
+    category: searchParams.get('jobCategory') || 'all',
+  }
+
+  const appFilter = {
+    status: searchParams.get('appStatus') || 'all',
+    applicant: searchParams.get('appApplicant') || '',
+    company: searchParams.get('appCompany') || '',
+    category: searchParams.get('appCategory') || 'all',
+    type: searchParams.get('appType') || 'all',
+  }
+
+  const employerFilter = {
+    status: searchParams.get('empStatus') || 'all',
+    industry: searchParams.get('empIndustry') || 'all',
+    search: searchParams.get('empSearch') || '',
+  }
+
+  const updateFilter = (key, value) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (value === 'all' || value === '') {
+      newParams.delete(key)
+    } else {
+      newParams.set(key, value)
+    }
+    setSearchParams(newParams)
+  }
+
+  const setTab = (tab) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (tab === 'overview') {
+      newParams.delete('tab')
+    } else {
+      newParams.set('tab', tab)
+    }
+    setSearchParams(newParams)
+  }
 
   const loadData = useCallback(async () => {
     try {
@@ -61,7 +88,7 @@ export default function AdminDashboard() {
         api.getStats(),
         api.getAllUsers(),
         api.getAllEmployers(),
-        api.getJobs({ includeInactive: true }),
+        api.getJobs(),
         api.getApplications(),
       ])
 
@@ -75,7 +102,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [api])
+  }, [])
 
   useEffect(() => {
     loadData()
@@ -146,7 +173,7 @@ export default function AdminDashboard() {
           <div>
             <Label icon={ShieldCheck} className="mb-2">Admin Dashboard</Label>
             <h1 className="industrial-heading text-4xl text-slate-950 dark:text-white">
-              {user.full_name}
+              Admin User
             </h1>
             <p className="text-slate-500 font-medium mt-2">
               Manage applicants, employers, jobs, and applications from the mock registry.
@@ -156,7 +183,7 @@ export default function AdminDashboard() {
 
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <button
-            onClick={() => setActiveTab('users')}
+            onClick={() => setTab('users')}
             className="bento-card p-6 text-left hover:border-blue-600/30 transition-all group"
           >
             <div className="flex items-center gap-3 mb-2">
@@ -166,7 +193,7 @@ export default function AdminDashboard() {
             <p className="text-3xl font-black text-slate-950 dark:text-white">{stats.userCount}</p>
           </button>
           <button
-            onClick={() => setActiveTab('employers')}
+            onClick={() => setTab('employers')}
             className="bento-card p-6 text-left hover:border-blue-600/30 transition-all group"
           >
             <div className="flex items-center gap-3 mb-2">
@@ -176,7 +203,7 @@ export default function AdminDashboard() {
             <p className="text-3xl font-black text-slate-950 dark:text-white">{stats.employerCount}</p>
           </button>
           <button
-            onClick={() => setActiveTab('jobs')}
+            onClick={() => setTab('jobs')}
             className="bento-card p-6 text-left hover:border-blue-600/30 transition-all group"
           >
             <div className="flex items-center gap-3 mb-2">
@@ -186,7 +213,7 @@ export default function AdminDashboard() {
             <p className="text-3xl font-black text-slate-950 dark:text-white">{stats.jobCount}</p>
           </button>
           <button
-            onClick={() => setActiveTab('applications')}
+            onClick={() => setTab('applications')}
             className="bento-card p-6 text-left hover:border-blue-600/30 transition-all group"
           >
             <div className="flex items-center gap-3 mb-2">
@@ -201,7 +228,7 @@ export default function AdminDashboard() {
           {['overview', 'users', 'employers', 'jobs', 'applications'].map(tab => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setTab(tab)}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap ${
                 activeTab === tab
                   ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
@@ -226,8 +253,8 @@ export default function AdminDashboard() {
               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <h4 className="font-bold text-slate-900 dark:text-white mb-2">Quick Actions</h4>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setActiveTab('jobs')} className="text-blue-600 text-sm hover:underline">View Jobs</button>
-                  <button onClick={() => setActiveTab('employers')} className="text-blue-600 text-sm hover:underline">View Employers</button>
+                  <button onClick={() => setTab('jobs')} className="text-blue-600 text-sm hover:underline">View Jobs</button>
+                  <button onClick={() => setTab('employers')} className="text-blue-600 text-sm hover:underline">View Employers</button>
                 </div>
               </div>
             </div>
@@ -267,7 +294,7 @@ export default function AdminDashboard() {
 
               <select
                 value={employerFilter.status}
-                onChange={(event) => setEmployerFilter({ ...employerFilter, status: event.target.value })}
+                onChange={(event) => updateFilter('empStatus', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Status</option>
@@ -278,7 +305,7 @@ export default function AdminDashboard() {
 
               <select
                 value={employerFilter.industry}
-                onChange={(event) => setEmployerFilter({ ...employerFilter, industry: event.target.value })}
+                onChange={(event) => updateFilter('empIndustry', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Industries</option>
@@ -292,7 +319,7 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   value={employerFilter.search}
-                  onChange={(event) => setEmployerFilter({ ...employerFilter, search: event.target.value })}
+                  onChange={(event) => updateFilter('empSearch', event.target.value)}
                   placeholder="Search company, email, industry..."
                   className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded pl-8 pr-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 placeholder:text-slate-400"
                 />
@@ -347,7 +374,7 @@ export default function AdminDashboard() {
               </div>
               <select
                 value={jobFilter.status}
-                onChange={(event) => setJobFilter({ ...jobFilter, status: event.target.value })}
+                onChange={(event) => updateFilter('jobStatus', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Status</option>
@@ -356,7 +383,7 @@ export default function AdminDashboard() {
               </select>
               <select
                 value={jobFilter.type}
-                onChange={(event) => setJobFilter({ ...jobFilter, type: event.target.value })}
+                onChange={(event) => updateFilter('jobType', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Types</option>
@@ -366,7 +393,7 @@ export default function AdminDashboard() {
               </select>
               <select
                 value={jobFilter.category}
-                onChange={(event) => setJobFilter({ ...jobFilter, category: event.target.value })}
+                onChange={(event) => updateFilter('jobCategory', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Categories</option>
@@ -414,7 +441,7 @@ export default function AdminDashboard() {
 
               <select
                 value={appFilter.status}
-                onChange={(event) => setAppFilter({ ...appFilter, status: event.target.value })}
+                onChange={(event) => updateFilter('appStatus', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Status</option>
@@ -425,7 +452,7 @@ export default function AdminDashboard() {
 
               <select
                 value={appFilter.category}
-                onChange={(event) => setAppFilter({ ...appFilter, category: event.target.value })}
+                onChange={(event) => updateFilter('appCategory', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Categories</option>
@@ -436,7 +463,7 @@ export default function AdminDashboard() {
 
               <select
                 value={appFilter.type}
-                onChange={(event) => setAppFilter({ ...appFilter, type: event.target.value })}
+                onChange={(event) => updateFilter('appType', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Types</option>
@@ -450,7 +477,7 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   value={appFilter.applicant}
-                  onChange={(event) => setAppFilter({ ...appFilter, applicant: event.target.value })}
+                  onChange={(event) => updateFilter('appApplicant', event.target.value)}
                   placeholder="Search applicant name or email..."
                   className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded pl-8 pr-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 placeholder:text-slate-400"
                 />
@@ -461,7 +488,7 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   value={appFilter.company}
-                  onChange={(event) => setAppFilter({ ...appFilter, company: event.target.value })}
+                  onChange={(event) => updateFilter('appCompany', event.target.value)}
                   placeholder="Search employer or company..."
                   className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded pl-8 pr-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 placeholder:text-slate-400"
                 />

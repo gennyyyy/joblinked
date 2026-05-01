@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Briefcase, FileText, Filter, Loader2, MapPin, ShieldCheck, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
@@ -24,19 +25,52 @@ const formatPrice = (price) => {
   }).format(num)
 }
 
+const MOCK_USER_ID = 1
+
 export default function ApplicantDashboard() {
-  const [activeTab, setActiveTab] = useState('overview')
+  const { api } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const [loading, setLoading] = useState(true)
   const [applications, setApplications] = useState([])
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedJobDetails, setSelectedJobDetails] = useState(null)
-  const { api, user } = useAuth()
+
+  const activeTab = searchParams.get('tab') || 'overview'
+  const statusFilter = searchParams.get('status') || 'all'
+  const jobIdParam = searchParams.get('jobId')
+
+  const selectedJobDetails = jobIdParam ? applications.find(a => a.id === parseInt(jobIdParam)) : null
+
+  const updateFilter = (key, value) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (value === 'all' || !value) {
+      newParams.delete(key)
+    } else {
+      newParams.set(key, value)
+    }
+    setSearchParams(newParams)
+  }
+
+  const setTab = (tab) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (tab === 'overview') {
+      newParams.delete('tab')
+    } else {
+      newParams.set('tab', tab)
+    }
+    setSearchParams(newParams)
+  }
+
+  const closeJobModal = () => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete('jobId')
+    setSearchParams(newParams)
+  }
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
-        const applicantApplications = await api.getApplicationsByUser(user.id)
+        const applicantApplications = await api.getApplicationsByUser(MOCK_USER_ID)
         setApplications(applicantApplications)
       } catch (error) {
         console.error('Error loading data:', error)
@@ -45,10 +79,8 @@ export default function ApplicantDashboard() {
       }
     }
 
-    if (user) {
-      loadData()
-    }
-  }, [api, user])
+    loadData()
+  }, [])
 
   const filteredApplications = useMemo(() => {
     if (statusFilter === 'all') return applications
@@ -66,7 +98,7 @@ export default function ApplicantDashboard() {
       }
 
       toast.success('Application reverted successfully')
-      const applicantApplications = await api.getApplicationsByUser(user.id)
+      const applicantApplications = await api.getApplicationsByUser(MOCK_USER_ID)
       setApplications(applicantApplications)
     } catch (error) {
       console.error('Error reverting application:', error)
@@ -89,7 +121,7 @@ export default function ApplicantDashboard() {
           <div>
             <Label icon={ShieldCheck} className="mb-2">Applicant Dashboard</Label>
             <h1 className="industrial-heading text-4xl text-slate-950 dark:text-white">
-              Welcome, {user.full_name}
+              Welcome, Job Seeker
             </h1>
             <p className="text-slate-500 font-medium mt-2">
               Track your applications and review your mock profile data.
@@ -122,7 +154,7 @@ export default function ApplicantDashboard() {
           {['overview', 'applications'].map(tab => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setTab(tab)}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
                 activeTab === tab
                   ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
@@ -141,19 +173,19 @@ export default function ApplicantDashboard() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label>Full Name</Label>
-                  <p className="text-slate-900 dark:text-white font-medium">{user.full_name}</p>
+                  <p className="text-slate-900 dark:text-white font-medium">John Applicant</p>
                 </div>
                 <div>
                   <Label>Email</Label>
-                  <p className="text-slate-900 dark:text-white font-medium">{user.email}</p>
+                  <p className="text-slate-900 dark:text-white font-medium">user@demo.com</p>
                 </div>
                 <div>
                   <Label>Phone</Label>
-                  <p className="text-slate-900 dark:text-white font-medium">{user.phone || 'Not provided'}</p>
+                  <p className="text-slate-900 dark:text-white font-medium">09123456789</p>
                 </div>
                 <div>
                   <Label>Barangay</Label>
-                  <p className="text-slate-900 dark:text-white font-medium">{user.barangay}</p>
+                  <p className="text-slate-900 dark:text-white font-medium">Poblacion</p>
                 </div>
               </div>
             </div>
@@ -181,7 +213,7 @@ export default function ApplicantDashboard() {
               </div>
               <select
                 value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
+                onChange={(event) => updateFilter('status', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="all">All Applications</option>
@@ -207,7 +239,7 @@ export default function ApplicantDashboard() {
                 <div
                   key={application.id}
                   className="bento-card p-6 cursor-pointer group/details hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all"
-                  onClick={() => setSelectedJobDetails(application)}
+                  onClick={() => updateFilter('jobId', application.id)}
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex-1 w-full md:w-auto">
@@ -260,7 +292,7 @@ export default function ApplicantDashboard() {
                 <p className="text-slate-500 font-medium mt-1">{selectedJobDetails.title}</p>
               </div>
               <button
-                onClick={() => setSelectedJobDetails(null)}
+                onClick={closeJobModal}
                 className="text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors"
               >
                 <X size={24} />

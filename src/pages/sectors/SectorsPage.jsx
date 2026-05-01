@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   ArrowRight,
   Building2,
@@ -32,10 +33,14 @@ const formatPrice = (price) => {
 }
 
 export default function SectorsPage() {
-  const [activeSector, setActiveSector] = useState('All')
-  const [jobs, setJobs] = useState([])
-  const [selectedJobDetails, setSelectedJobDetails] = useState(null)
   const { api } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [jobs, setJobs] = useState([])
+
+  const activeSector = searchParams.get('sector') || 'All'
+  const jobIdParam = searchParams.get('jobId')
+  const selectedJobDetails = jobIdParam ? jobs.find(j => j.id === parseInt(jobIdParam)) : null
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -48,7 +53,23 @@ export default function SectorsPage() {
     }
 
     loadJobs()
-  }, [api])
+  }, [])
+
+  const updateSector = (sectorId) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (sectorId === 'All') {
+      newParams.delete('sector')
+    } else {
+      newParams.set('sector', sectorId)
+    }
+    setSearchParams(newParams)
+  }
+
+  const closeJobModal = () => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete('jobId')
+    setSearchParams(newParams)
+  }
 
   const sectors = [
     { id: 'All', title: 'Global Database', icon: Globe, count: jobs.length },
@@ -95,7 +116,7 @@ export default function SectorsPage() {
             {sectors.map(sector => (
               <button
                 key={sector.id}
-                onClick={() => setActiveSector(sector.id)}
+                onClick={() => updateSector(sector.id)}
                 className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${
                   activeSector === sector.id
                     ? 'bg-slate-950 dark:bg-white text-white dark:text-slate-950 border-slate-950 dark:border-white shadow-xl'
@@ -132,7 +153,11 @@ export default function SectorsPage() {
               {filteredJobs.map(job => (
                 <div
                   key={job.id}
-                  onClick={() => setSelectedJobDetails(job)}
+                  onClick={() => {
+                  const newParams = new URLSearchParams(searchParams)
+                  newParams.set('jobId', job.id)
+                  setSearchParams(newParams)
+                }}
                   className="group p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-600/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex flex-col md:flex-row gap-6 justify-between items-start md:items-center cursor-pointer"
                 >
                   <div>
@@ -170,7 +195,7 @@ export default function SectorsPage() {
                 <p className="text-slate-500 font-medium mt-1">{selectedJobDetails.title}</p>
               </div>
               <button
-                onClick={() => setSelectedJobDetails(null)}
+                onClick={closeJobModal}
                 className="text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors"
               >
                 <X size={24} />

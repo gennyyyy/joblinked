@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   ArrowUpRight,
   BarChart,
@@ -11,7 +12,6 @@ import {
   X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { JOB_CATEGORIES, JOB_TYPES } from '../../mockData'
 
@@ -36,35 +36,45 @@ const Label = ({ children, icon: Icon, className = '' }) => (
 )
 
 export default function Browse() {
-  const [term, setTerm] = useState('')
-  const [type, setType] = useState('')
-  const [category, setCategory] = useState('')
+  const { api } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const [jobs, setJobs] = useState([])
-  const [selectedJobDetails, setSelectedJobDetails] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [applyingJobId, setApplyingJobId] = useState(null)
   const [appliedJobs, setAppliedJobs] = useState(new Map())
-  const [applicationStatusFilter, setApplicationStatusFilter] = useState('all')
-  const navigate = useNavigate()
-  const { api, user } = useAuth()
-  const isApplicant = user?.role === 'applicant'
+
+  const term = searchParams.get('q') || ''
+  const type = searchParams.get('type') || ''
+  const category = searchParams.get('category') || ''
+  const applicationStatusFilter = searchParams.get('appStatus') || 'all'
+  const jobIdParam = searchParams.get('jobId')
+
+  const selectedJobDetails = jobIdParam ? jobs.find(j => j.id === parseInt(jobIdParam)) : null
+
+  const MOCK_USER_ID = 1
+
+  const updateParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (!value) {
+      newParams.delete(key)
+    } else {
+      newParams.set(key, value)
+    }
+    setSearchParams(newParams)
+  }
+
+  const closeJobModal = () => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete('jobId')
+    setSearchParams(newParams)
+  }
 
   const handleApply = async (jobId) => {
-    if (!isApplicant) {
-      toast.error('Enter the applicant portal to submit applications')
-      navigate('/login')
-      return
-    }
-
-    if (appliedJobs.has(jobId)) {
-      toast.error('You have already applied to this job.')
-      return
-    }
-
     try {
       setApplyingJobId(jobId)
-      const response = await api.createApplication(jobId, user.id)
+      const response = await api.createApplication(jobId, MOCK_USER_ID)
 
       if (response && !response.success) {
         toast.error(response.error || 'Failed to submit application')
@@ -116,16 +126,12 @@ export default function Browse() {
         const jobsData = await api.getJobs()
         setJobs(jobsData)
 
-        if (isApplicant) {
-          const applicationsData = await api.getApplicationsByUser(user.id)
-          const applicationsMap = new Map()
-          applicationsData.forEach(application => {
-            applicationsMap.set(application.job_id, application)
-          })
-          setAppliedJobs(applicationsMap)
-        } else {
-          setAppliedJobs(new Map())
-        }
+        const applicationsData = await api.getApplicationsByUser(MOCK_USER_ID)
+        const applicationsMap = new Map()
+        applicationsData.forEach(application => {
+          applicationsMap.set(application.job_id, application)
+        })
+        setAppliedJobs(applicationsMap)
 
         setError(null)
       } catch (loadError) {
@@ -137,7 +143,7 @@ export default function Browse() {
     }
 
     loadData()
-  }, [api, isApplicant, user])
+  }, [])
 
   const filtered = useMemo(() => {
     return jobs.filter(job => {
@@ -162,14 +168,6 @@ export default function Browse() {
 
     if (applyingJobId === jobId) {
       return <Loader2 size={16} className="animate-spin" />
-    }
-
-    if (!isApplicant) {
-      return (
-        <>
-          Applicant Portal <ArrowUpRight size={16} />
-        </>
-      )
     }
 
     if (!application) {
@@ -231,7 +229,7 @@ export default function Browse() {
               placeholder="Search registry..."
               className="w-full bg-transparent border border-slate-300 dark:border-slate-700 rounded-lg py-3 pl-11 pr-4 text-sm font-medium focus:outline-none focus:border-blue-600 transition-colors"
               value={term}
-              onChange={(event) => setTerm(event.target.value)}
+              onChange={(event) => updateParam('q', event.target.value)}
             />
           </div>
         </div>
@@ -244,7 +242,7 @@ export default function Browse() {
                 {JOB_TYPES.map(jobType => (
                   <button
                     key={jobType}
-                    onClick={() => setType(jobType === type ? '' : jobType)}
+                    onClick={() => updateParam('type', type === jobType ? '' : jobType)}
                     className={`w-full text-left px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       type === jobType
                         ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
@@ -267,7 +265,7 @@ export default function Browse() {
 
               <select
                 value={category}
-                onChange={(event) => setCategory(event.target.value)}
+                onChange={(event) => updateParam('category', event.target.value)}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="">All Categories</option>
@@ -276,17 +274,15 @@ export default function Browse() {
                 ))}
               </select>
 
-              {isApplicant && (
-                <select
-                  value={applicationStatusFilter}
-                  onChange={(event) => setApplicationStatusFilter(event.target.value)}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
-                >
-                  <option value="all">All Jobs</option>
-                  <option value="not_applied">Not Applied Yet</option>
-                  <option value="applied">Already Applied</option>
-                </select>
-              )}
+              <select
+                value={applicationStatusFilter}
+                onChange={(event) => updateParam('appStatus', event.target.value)}
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+              >
+                <option value="all">All Jobs</option>
+                <option value="not_applied">Not Applied Yet</option>
+                <option value="applied">Already Applied</option>
+              </select>
             </div>
 
             <div className="border-t border-slate-200 dark:border-slate-800">
@@ -315,7 +311,7 @@ export default function Browse() {
                   >
                     <div
                       className="space-y-2 flex-1 cursor-pointer group/details"
-                      onClick={() => setSelectedJobDetails(job)}
+                      onClick={() => updateParam('jobId', job.id)}
                     >
                       <div className="flex items-center gap-3">
                         <span className="industrial-label text-blue-600">
@@ -402,7 +398,7 @@ export default function Browse() {
                 <p className="text-slate-500 font-medium mt-1">{selectedJobDetails.title}</p>
               </div>
               <button
-                onClick={() => setSelectedJobDetails(null)}
+                onClick={closeJobModal}
                 className="text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors"
               >
                 <X size={24} />
