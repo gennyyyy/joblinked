@@ -1,5 +1,26 @@
-import { Link } from 'react-router-dom';
-import { User, Building2, Shield, Layers } from 'lucide-react';
+import { Building2, Layers, Shield, User } from 'lucide-react'
+import { Link } from 'react-router-dom'
+
+function PortalCard({ description, icon, title, to }) {
+  const PortalIcon = icon
+
+  return (
+    <Link
+      to={to}
+      className="bento-card p-8 text-center group hover:border-blue-600/30 transition-all hover:-translate-y-1"
+    >
+      <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+        <PortalIcon size={32} className="text-blue-600" />
+      </div>
+      <h3 className="text-xl font-black text-slate-950 dark:text-white mb-2">
+        {title}
+      </h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+        {description}
+      </p>
+    </Link>
+  )
+}
 
 export default function LoginPage() {
   return (
@@ -22,50 +43,24 @@ export default function LoginPage() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link
-            to="/applicants/login"
-            className="bento-card p-8 text-center group hover:border-blue-600/30 transition-all hover:-translate-y-1"
-          >
-            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <User size={32} className="text-blue-600" />
-            </div>
-            <h3 className="text-xl font-black text-slate-950 dark:text-white mb-2">
-              Job Seeker
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Find jobs, apply to programs, track applications
-            </p>
-          </Link>
-
-          <Link
-            to="/employers/login"
-            className="bento-card p-8 text-center group hover:border-blue-600/30 transition-all hover:-translate-y-1"
-          >
-            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <Building2 size={32} className="text-blue-600" />
-            </div>
-            <h3 className="text-xl font-black text-slate-950 dark:text-white mb-2">
-              Employer
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Post jobs, manage applications, hire talent
-            </p>
-          </Link>
-
-          <Link
+          <PortalCard
+            title="Job Seeker"
+            description="Find jobs, apply to programs, track applications"
+            icon={User}
+            to="/applicant/login"
+          />
+          <PortalCard
+            title="Employer"
+            description="Post jobs, manage applications, hire talent"
+            icon={Building2}
+            to="/employer/login"
+          />
+          <PortalCard
+            title="Admin"
+            description="Manage users, jobs, and system settings"
+            icon={Shield}
             to="/admin/login"
-            className="bento-card p-8 text-center group hover:border-blue-600/30 transition-all hover:-translate-y-1"
-          >
-            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <Shield size={32} className="text-blue-600" />
-            </div>
-            <h3 className="text-xl font-black text-slate-950 dark:text-white mb-2">
-              Admin
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Manage users, jobs, and system settings
-            </p>
-          </Link>
+          />
         </div>
 
         <div className="text-center mt-12">
@@ -73,10 +68,10 @@ export default function LoginPage() {
             to="/home"
             className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors"
           >
-            Learn more about JobLinked →
+            Learn more about JobLinked {'->'}
           </Link>
         </div>
       </div>
     </div>
-  );
+  )
 }

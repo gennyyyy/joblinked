@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Cpu, BarChart, Layers, ShieldCheck, Building2 } from 'lucide-react';
+import { BarChart, Building2, Cpu, Layers, ShieldCheck } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const Label = ({ children, icon: Icon }) => (
   <div className="flex items-center gap-2 industrial-label text-slate-500 dark:text-slate-400">
@@ -9,6 +10,14 @@ const Label = ({ children, icon: Icon }) => (
 );
 
 export default function EmployerLanding() {
+  const navigate = useNavigate()
+  const { signInAsRole } = useAuth()
+
+  const handleOpenDashboard = () => {
+    signInAsRole('employer')
+    navigate('/employer/dashboard')
+  }
+
   return (
     <div className="min-h-screen bg-grid-pattern pt-32 pb-16">
       <div className="max-w-7xl mx-auto px-6">
@@ -28,12 +37,13 @@ export default function EmployerLanding() {
             >
               Register Company
             </Link>
-            <Link
-              to="/employers/login"
+            <button
+              type="button"
+              onClick={handleOpenDashboard}
               className="border border-slate-300 dark:border-slate-700 px-8 py-4 rounded-xl font-bold text-sm hover:border-blue-600 transition-all"
             >
-              Employer Login
-            </Link>
+              Dashboard
+            </button>
           </div>
         </div>
 
@@ -112,5 +122,5 @@ export default function EmployerLanding() {
         </div>
       </div>
     </div>
-  );
+  )
 }

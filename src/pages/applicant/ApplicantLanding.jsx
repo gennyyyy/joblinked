@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Briefcase, Building2, Users, Heart, Shield, MapPin } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Briefcase, Building2, Shield, Users } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const Label = ({ children, icon: Icon }) => (
   <div className="flex items-center gap-2 industrial-label text-slate-500 dark:text-slate-400">
@@ -10,7 +10,13 @@ const Label = ({ children, icon: Icon }) => (
 );
 
 export default function ApplicantLanding() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const { signInAsRole } = useAuth()
+
+  const handleOpenDashboard = () => {
+    signInAsRole('applicant')
+    navigate('/applicant/dashboard')
+  }
 
   return (
     <div className="min-h-screen bg-grid-pattern pt-24 pb-16">
@@ -31,12 +37,13 @@ export default function ApplicantLanding() {
             >
               Create Account
             </Link>
-            <Link
-              to="/applicants/login"
+            <button
+              type="button"
+              onClick={handleOpenDashboard}
               className="border border-slate-300 dark:border-slate-700 px-8 py-4 rounded-xl font-bold text-sm hover:border-blue-600 transition-all"
             >
-              Sign In
-            </Link>
+              Dashboard
+            </button>
           </div>
         </div>
 
@@ -93,5 +100,5 @@ export default function ApplicantLanding() {
         </div>
       </div>
     </div>
-  );
+  )
 }

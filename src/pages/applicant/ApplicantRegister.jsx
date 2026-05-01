@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Layers, ArrowLeft } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
-import { BARANGAYS } from '../../mockData';
+import { useState } from 'react'
+import { ArrowLeft, Layers } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { BARANGAYS } from '../../mockData'
 
 export default function ApplicantRegister() {
   const [formData, setFormData] = useState({
@@ -13,67 +13,55 @@ export default function ApplicantRegister() {
     confirmPassword: '',
     phone: '',
     barangay: '',
-  });
-  const [error, setError] = useState('');
-  const { registerUser, dbReady } = useAuth();
-  const navigate = useNavigate();
+  })
+  const [error, setError] = useState('')
+  const { registerApplicant } = useAuth()
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!dbReady) {
-      toast.error('Database is loading...');
-      setError('Database is loading...');
-      return;
-    }
+    e.preventDefault()
 
     if (!formData.email || !formData.password || !formData.fullName || !formData.barangay) {
-      toast.error('Please fill in all required fields');
-      setError('Please fill in all required fields');
-      return;
+      toast.error('Please fill in all required fields')
+      setError('Please fill in all required fields')
+      return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      setError('Passwords do not match');
-      return;
+      toast.error('Passwords do not match')
+      setError('Passwords do not match')
+      return
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      setError('Password must be at least 6 characters');
-      return;
+      toast.error('Password must be at least 6 characters')
+      setError('Password must be at least 6 characters')
+      return
     }
 
-    const result = await registerUser(
-      formData.email,
-      formData.password,
-      formData.fullName,
-      formData.phone,
-      formData.barangay
-    );
-
+    const result = await registerApplicant(formData)
     if (result.success) {
-      toast.success('Account created! Please sign in with your credentials.');
-      navigate('/applicants/login');
+      toast.success('Applicant account created')
+      navigate('/applicant/dashboard')
     } else {
-      toast.error(result.error);
-      setError(result.error);
+      toast.error(result.error)
+      setError(result.error)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-grid-pattern p-6 py-12 md:py-20">
       <div className="w-full max-w-md">
         <Link 
-          to="/applicants/login" 
+          to="/login" 
           className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft size={16} />
-          <span className="text-sm font-medium">Back to Login</span>
+          <span className="text-sm font-medium">Back to Portal</span>
         </Link>
         
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
@@ -181,12 +169,12 @@ export default function ApplicantRegister() {
 
           <p className="text-center text-slate-500 text-sm font-medium mt-6">
             Already have an account?{' '}
-            <Link to="/applicants/login" className="text-blue-600 hover:underline">
-              Sign in
+            <Link to="/applicant/login" className="text-blue-600 hover:underline">
+              Open Demo Login
             </Link>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

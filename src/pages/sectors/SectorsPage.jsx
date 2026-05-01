@@ -1,55 +1,81 @@
-import { useMemo, useState, useEffect } from 'react';
-import { MapPin, ArrowRight, X, Globe, Cpu, Building2, ShieldCheck, PieChart } from 'lucide-react';
-import { useAuth, api } from '../../context/AuthContext';
+import { useEffect, useMemo, useState } from 'react'
+import {
+  ArrowRight,
+  Building2,
+  Cpu,
+  Globe,
+  MapPin,
+  PieChart,
+  ShieldCheck,
+  X,
+} from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
-const Label = ({ children, icon: Icon, className = "" }) => (
+const Label = ({ children, icon: Icon, className = '' }) => (
   <div className={`flex items-center gap-2 industrial-label text-slate-500 dark:text-slate-400 ${className}`}>
     {Icon && <Icon size={14} className="text-blue-600" />}
     <span>{children}</span>
   </div>
-);
+)
 
 const formatPrice = (price) => {
-  if (!price) return 'N/A';
-  if (typeof price === 'string' && (price.includes('₱') || price.includes('PHP'))) return price;
-  
-  const num = parseFloat(String(price).replace(/,/g, ''));
-  if (isNaN(num)) return price;
+  if (!price) return 'N/A'
+  if (typeof price === 'string' && price.includes('PHP')) return price
+
+  const num = parseFloat(String(price).replace(/,/g, ''))
+  if (Number.isNaN(num)) return price
 
   return 'PHP ' + new Intl.NumberFormat('en-PH', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(num);
-};
+  }).format(num)
+}
 
 export default function SectorsPage() {
-  const [activeSector, setActiveSector] = useState("All");
-  const [jobs, setJobs] = useState([]);
-  const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+  const [activeSector, setActiveSector] = useState('All')
+  const [jobs, setJobs] = useState([])
+  const [selectedJobDetails, setSelectedJobDetails] = useState(null)
+  const { api } = useAuth()
 
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const data = await api.getJobs();
-        setJobs(data);
+        const data = await api.getJobs()
+        setJobs(data)
       } catch (error) {
-        console.error('Error loading jobs:', error);
+        console.error('Error loading jobs:', error)
       }
-    };
-    loadJobs();
-  }, []);
+    }
+
+    loadJobs()
+  }, [api])
 
   const sectors = [
-    { id: "All", title: "Global Database", icon: Globe, count: jobs.length },
-    { id: "Professional", title: "Tech & Corporate", icon: Cpu, count: jobs.filter((j) => j.category === "Professional").length },
-    { id: "Skilled Labor", title: "Industrial & Mfg", icon: Building2, count: jobs.filter((j) => j.category === "Skilled Labor").length },
-    { id: "Student Programs", title: "Gov't & Youth", icon: ShieldCheck, count: jobs.filter((j) => j.category === "Student Programs").length },
-  ];
+    { id: 'All', title: 'Global Database', icon: Globe, count: jobs.length },
+    {
+      id: 'Professional',
+      title: 'Tech & Corporate',
+      icon: Cpu,
+      count: jobs.filter(job => job.category === 'Professional').length,
+    },
+    {
+      id: 'Skilled Labor',
+      title: 'Industrial & Mfg',
+      icon: Building2,
+      count: jobs.filter(job => job.category === 'Skilled Labor').length,
+    },
+    {
+      id: 'Student Programs',
+      title: "Gov't & Youth",
+      icon: ShieldCheck,
+      count: jobs.filter(job => job.category === 'Student Programs').length,
+    },
+  ]
 
   const filteredJobs = useMemo(() => {
-    if (activeSector === "All") return jobs;
-    return jobs.filter((j) => j.category === activeSector);
-  }, [activeSector, jobs]);
+    if (activeSector === 'All') return jobs
+    return jobs.filter(job => job.category === activeSector)
+  }, [activeSector, jobs])
 
   return (
     <div className="bg-grid-pattern min-h-screen pt-32 pb-24">
@@ -60,28 +86,28 @@ export default function SectorsPage() {
             Registry Access.
           </h1>
           <p className="text-slate-500 font-medium mt-4 max-w-2xl">
-            Query live opportunities directly from the municipal database.
+            Query live opportunities directly from the municipal job registry.
           </p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="w-full lg:w-80 shrink-0 space-y-4">
-            {sectors.map((sec) => (
+            {sectors.map(sector => (
               <button
-                key={sec.id}
-                onClick={() => setActiveSector(sec.id)}
+                key={sector.id}
+                onClick={() => setActiveSector(sector.id)}
                 className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${
-                  activeSector === sec.id
-                    ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 border-slate-950 dark:border-white shadow-xl"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-600/30 hover:shadow-lg hover:-translate-y-1"
+                  activeSector === sector.id
+                    ? 'bg-slate-950 dark:bg-white text-white dark:text-slate-950 border-slate-950 dark:border-white shadow-xl'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-600/30 hover:shadow-lg hover:-translate-y-1'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <sec.icon size={20} className={activeSector === sec.id ? "" : "text-blue-600"} />
-                  <span className="font-black tracking-tight">{sec.title}</span>
+                  <sector.icon size={20} className={activeSector === sector.id ? '' : 'text-blue-600'} />
+                  <span className="font-black tracking-tight">{sector.title}</span>
                 </div>
-                <span className={`industrial-label ${activeSector === sec.id ? "text-white/70 dark:text-slate-500" : ""}`}>
-                  {sec.count}
+                <span className={`industrial-label ${activeSector === sector.id ? 'text-white/70 dark:text-slate-500' : ''}`}>
+                  {sector.count}
                 </span>
               </button>
             ))}
@@ -93,9 +119,9 @@ export default function SectorsPage() {
             <div className="flex justify-between items-center mb-8 border-b border-slate-100 dark:border-slate-800 pb-6 relative z-10">
               <div>
                 <h3 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
-                  {sectors.find((s) => s.id === activeSector)?.title} Positions
+                  {sectors.find(sector => sector.id === activeSector)?.title} Positions
                 </h3>
-                <p className="industrial-label text-slate-400 mt-2">Live Query Results</p>
+                <p className="industrial-label text-slate-400 mt-2">Mock Query Results</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-lg industrial-label text-blue-600">
                 {filteredJobs.length} Found
@@ -103,7 +129,7 @@ export default function SectorsPage() {
             </div>
 
             <div className="space-y-4 relative z-10">
-              {filteredJobs.map((job) => (
+              {filteredJobs.map(job => (
                 <div
                   key={job.id}
                   onClick={() => setSelectedJobDetails(job)}
@@ -112,7 +138,7 @@ export default function SectorsPage() {
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <span className="industrial-label text-blue-600">{job.type}</span>
-                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <span className="text-slate-300 dark:text-slate-700">|</span>
                       <span className="industrial-label text-slate-500">{job.company}</span>
                     </div>
                     <h4 className="text-xl font-bold text-slate-950 dark:text-white group-hover:text-blue-600 transition-colors">
@@ -135,7 +161,6 @@ export default function SectorsPage() {
         </div>
       </div>
 
-      {/* Job Details Modal */}
       {selectedJobDetails && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B0F19] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl">
@@ -144,7 +169,7 @@ export default function SectorsPage() {
                 <h3 className="text-2xl font-black text-slate-950 dark:text-white">Job Details</h3>
                 <p className="text-slate-500 font-medium mt-1">{selectedJobDetails.title}</p>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedJobDetails(null)}
                 className="text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors"
               >
@@ -170,12 +195,12 @@ export default function SectorsPage() {
                   <p className="font-bold text-slate-900 dark:text-white mt-1">{selectedJobDetails.location}</p>
                 </div>
               </div>
-              
+
               <div>
                 <Label className="mb-2">Description</Label>
                 <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">{selectedJobDetails.description}</p>
               </div>
-              
+
               <div>
                 <Label className="mb-2">Requirements</Label>
                 <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">{selectedJobDetails.requirements}</p>
@@ -185,5 +210,5 @@ export default function SectorsPage() {
         </div>
       )}
     </div>
-  );
+  )
 }
