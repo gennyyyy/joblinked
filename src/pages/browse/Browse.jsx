@@ -11,8 +11,8 @@ import {
   X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useNavigate } from '../../navigation'
 import { JOB_CATEGORIES, JOB_TYPES } from '../../mockData'
 
 const formatPrice = (price) => {

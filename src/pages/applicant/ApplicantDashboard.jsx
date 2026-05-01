@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Briefcase, FileText, Filter, Loader2, MapPin, ShieldCheck, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { Link } from '../../navigation'
 
 const Label = ({ children, icon: Icon }) => (
   <div className="flex items-center gap-2 industrial-label text-slate-500 dark:text-slate-400">

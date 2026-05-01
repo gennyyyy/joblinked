@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { Layers, Sun, Moon } from 'lucide-react';
+import { Link, useLocation } from '../../navigation';
 
 const useScroll = () => {
   const [scrolled, setScrolled] = useState(false);

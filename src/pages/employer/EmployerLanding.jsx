@@ -1,6 +1,6 @@
 import { BarChart, Building2, Cpu, Layers, ShieldCheck } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { Link, useNavigate } from '../../navigation'
 
 const Label = ({ children, icon: Icon }) => (
   <div className="flex items-center gap-2 industrial-label text-slate-500 dark:text-slate-400">
